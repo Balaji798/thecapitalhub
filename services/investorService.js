@@ -163,7 +163,7 @@ export const addStartupInvested = async (investorId, startupData) => {
 //get investor by id
 export const getInvestorById = async (investorId) => {
   try {
-    const investor = await InvestorModel.findById(investorId)
+    const investor = await InvestorModel.findOne({founderId:investorId})
     // .populate({
     //   path: 'founderId',
     //   model: 'Users', 
@@ -177,7 +177,7 @@ export const getInvestorById = async (investorId) => {
     return {
       status: 200,
       message: "Investor Data found",
-      data: investor,
+      data: {},
     };
   } catch (error) {
     console.error("Error getting investor by ID:", error);

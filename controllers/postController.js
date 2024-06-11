@@ -22,6 +22,7 @@ import {
   addToCompanyUpdate,
   getCompanyUpdateByUser,
   removeCompanyUpdatePost,
+  userPost,
 } from "../services/postService.js";
 import { UserModel } from "../models/User.js";
 
@@ -92,6 +93,20 @@ export const getAllPosts = async (req, res) => {
   }
 };
 
+export const getUserPost = async (req,res)=>{
+  try{
+   const data = await userPost(req.userId)
+   if (!data.allPosts.length) {
+    res.status(404).send({
+      message: "No Posts yet",
+    });
+  } else {
+    res.send({ message: "Posts fetched successfully", data });
+  }
+  }catch(err){
+    res.status(500).send(err);
+  }
+}
 export const getSinglePost = async (req, res) => {
   try {
     const data = await singlePostData(req.params.id);

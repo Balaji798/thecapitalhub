@@ -144,7 +144,15 @@ export const allPostsData = async (page, perPage) => {
     throw new Error("Error fetching all posts");
   }
 };
-
+export const userPost = async (user) => {
+  try {
+    const userData = await UserModel.findById(user)
+    const allPosts = await PostModel.find({user})
+    return {allPosts,userData};
+  } catch (error) {
+    throw new Error("Error fetching all posts");
+  }
+};
 export const singlePostData = async (_id) => {
   try {
     const post = await PostModel.findOne({ _id })

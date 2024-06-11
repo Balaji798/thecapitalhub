@@ -43,7 +43,7 @@ router.post("/requestPasswordReset", requestPasswordResetController);
 
 router.patch("/resetPassword", resetPasswordController);
 
-//validate onelink secret key
+//validate onelink secret key 
 router.post("/validateSecretKey", validateSecretKeyController);
 
 router.post("/googleLogin", googleLoginController);

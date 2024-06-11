@@ -115,7 +115,8 @@ export const registerUserController = async (req, res, next) => {
       previousFounding,
       fundedTillDate,
       portfolio,
-      chequeSize
+      chequeSize,
+      linkedin
     } = req.body;
 
     const newUser = await registerUserService({
@@ -126,6 +127,7 @@ export const registerUserController = async (req, res, next) => {
       phoneNumber,
       isInvestor,
       gender,
+      linkedin
     });
 
     const generateUniqueOneLink = async (baseLink, model) => {
@@ -157,7 +159,8 @@ export const registerUserController = async (req, res, next) => {
         industry,
         description: portfolio,
         oneLink: uniqueOneLink,
-        founderId:newUser._id
+        founderId:newUser._id,
+        linkedin
       });
       //await newInvestor.save();
       const { founderId } = newInvestor;
@@ -213,10 +216,14 @@ export const registerUserController = async (req, res, next) => {
 
       await newStartUp.save();
       const { founderId } = newStartUp;
-      await UserModel.findOneAndUpdate({_id:founderId}, {
+     await UserModel.findOneAndUpdate({_id:founderId}, {
         startUp: newStartUp._id,
       });
-      return res.status(201).json({ message: "User added successfully" });
+      const token = jwt.sign(
+        { userId: newUser._id, phoneNumber: newUser.phoneNumber },
+        secretKey
+      );
+      return res.status(201).json({ message: "User added successfully",data:newUser, token});
     }
   } catch ({ message }) {
     res.status(409).json({
@@ -283,6 +290,7 @@ export const updateUser = async (req, res) => {
 export const updateUserByIdController = async (req, res) => {
   try {
     const { userId } = req.params;
+    console.log(req.body)
     const { status, message, data } = await updateUserById(userId, req.body);
     res.status(status).json({ message, data });
   } catch (error) {}

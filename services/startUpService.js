@@ -233,7 +233,7 @@ export const getStartupByFounderId = async (founderId) => {
         status: 404,
         message: "User not found.",
       };
-    }
+    } 
     if (!user.startUp) {
       return {
         status: 404,

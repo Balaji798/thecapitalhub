@@ -20,7 +20,8 @@ import {
   deleteCommentController,
   unsavePostController,
   toggleCommentLikeController,
-  removeCompanyUpdatePostController
+  removeCompanyUpdatePostController,
+  getUserPost
 } from "../controllers/postController.js";
 import { authenticateToken } from "../middlewares/authenticateToken.js";
 const router = express.Router();
@@ -29,7 +30,7 @@ router.use(authenticateToken);
 
 router.get("/getposts", getAllPosts);
 router.get("/getSinglePost/:id", getSinglePost);
-
+router.get("/user_post",getUserPost)
 // Single user routes
 router.post("/newPost", createPost);
 // router.patch("/oldsavePost/:postId", savePost);

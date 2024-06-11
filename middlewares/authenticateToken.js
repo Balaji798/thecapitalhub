@@ -11,7 +11,6 @@ export const authenticateToken = async (req, res, next) => {
     // Verify the token synchronously and get the user details
     const { userId } = jwt.verify(token, secretKey);
     const foundUser = await UserModel.findOne({ _id: userId });
-
     if (!foundUser) {
       return res.status(403).json({ success: false, message: "Invalid token" });
     }

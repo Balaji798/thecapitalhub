@@ -36,7 +36,7 @@ app.use("/api/posts", postData);
 app.use("/documentation", documentData);
 app.use("/startup", startUpData);
 app.use("/contactUs", contactUsData);
-app.use("/connections", connectionData);
+app.use("/connections", connectionData); 
 app.use("/investor", investorData);
 app.use("/chat", chatData);
 app.use("/message", messageData);
