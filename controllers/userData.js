@@ -290,7 +290,6 @@ export const updateUser = async (req, res) => {
 export const updateUserByIdController = async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log(req.body)
     const { status, message, data } = await updateUserById(userId, req.body);
     res.status(status).json({ message, data });
   } catch (error) {}

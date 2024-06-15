@@ -22,6 +22,7 @@ import notificationData from "./routes/notificationRoutes.js";
 import scheduleRoutes from "./routes/scheduleRoutes.js";
 import questionsRoutes from "./routes/questionsRoute.js";
 import achievementRoutes from "./routes/achievementRoutes.js";
+import liveDealRoutes from "./routes/liveDealRoutes.js" 
 
 dotenv.config();
 const app = express();
@@ -45,7 +46,7 @@ app.use("/notificaton", notificationData);
 app.use("/schedule", scheduleRoutes);
 app.use("/question", questionsRoutes);
 app.use("/achievement", achievementRoutes);
-
+app.use("/live_deals",liveDealRoutes);
 // documentation upload
 
 const storage = multer.diskStorage({

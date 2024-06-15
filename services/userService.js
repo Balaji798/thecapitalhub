@@ -190,7 +190,6 @@ export const requestPasswordReset = async (email) => {
       expiresIn: "1h",
     }); 
     const resetLink = `${process.env.BASE_URL}/reset-password?token=${resetToken}`;
-    console.log(resetToken);
     const resetPasswordMessage = `
       <p>You've requested to reset your password. If you didn't make this request, please ignore this email.</p>
   

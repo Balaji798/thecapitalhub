@@ -60,6 +60,7 @@ export const addStartupInvestedController = async (req, res) => {
 export const getInvestorByIdController = async (req, res) => {
   try {
     const { investorId } = req.params;
+    
     const response = await getInvestorById(investorId);
     res.status(response.status).send(response);
     return response;
