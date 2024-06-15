@@ -40,13 +40,23 @@ export const get_live_deal = async (req, res) => {
 
 export const add_to_live_deals = async (req, res) => {
   try {
-    console.log(req.body)
+    console.log(req.body.liveDealId)
     const data = await LiveDealsModel.findById(req.body.liveDealId);
     if (!data.intrustedInvestor.includes(req.userId)) {
       data.intrustedInvestor.push(req.userId);
       data.save();
     }
-    const liveDealData = await LiveDealsModel.find();
+    const liveDealData = await LiveDealsModel.find().populate({
+      path: "startupId",
+      model: "StartUps",
+      select:
+        "company logo sector description location noOfEmployees socialLinks",
+    })
+    .populate({
+      path: "intrustedInvestor",
+      model: "Users",
+      select: "profilePicture firstName lastName designation",
+    });
     return res.status(200).send(liveDealData);
   } catch (err) {
     return res.status(500).send({
