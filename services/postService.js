@@ -58,7 +58,7 @@ export const createNewPost = async (data) => {
 
     if (data.postType === "company") {
       const user = await UserModel.findOne({ _id: data.user });
-       user.companyUpdate.push(post._id);
+      user.companyUpdate.push(post._id);
       await user.save();
     }
     await newPost.populate("user");
@@ -146,9 +146,9 @@ export const allPostsData = async (page, perPage) => {
 };
 export const userPost = async (user) => {
   try {
-    const userData = await UserModel.findById(user)
-    const allPosts = await PostModel.find({user})
-    return {allPosts,userData};
+    const userData = await UserModel.findById(user);
+    const allPosts = await PostModel.find({ user });
+    return { allPosts, userData };
   } catch (error) {
     throw new Error("Error fetching all posts");
   }
@@ -513,7 +513,16 @@ export const getSavedPostsByCollection = async (userId, collectionName) => {
         message: "User not found",
       };
     }
-    const collection = user.savedPosts.find((c) => c.name === collectionName);
+    let collection = {};
+    if (collectionName === "my saved posts") {
+      const posts = user.savedPosts.map((c) => c.posts);
+      collection = {
+        name: "my saved posts",
+        posts: posts.flat(1),
+      };
+    } else {
+      collection = user.savedPosts.find((c) => c.name === collectionName);
+    }
     if (!collection) {
       return {
         status: 404,
@@ -635,10 +644,10 @@ export const deletePost = async (postId, userId) => {
       _id: postId,
       user: userId,
     });
-    const user = await UserModel.findOne({_id:userId})
-    if(user.companyUpdate.includes(postId)){
-      user.companyUpdate.filter(id => id !== postId)
-      user.save()
+    const user = await UserModel.findOne({ _id: userId });
+    if (user.companyUpdate.includes(postId)) {
+      user.companyUpdate.filter((id) => id !== postId);
+      user.save();
     }
     if (!deletedPost) {
       return {
@@ -674,10 +683,10 @@ export const addToCompanyUpdate = async (postId, userId) => {
         message: "Post is already in featured posts.",
       };
     }
-    
+
     user.companyUpdate.push(postId);
     await user.save();
-    await PostModel.findOneAndUpdate({_id:postId},{postType:"company"})
+    await PostModel.findOneAndUpdate({ _id: postId }, { postType: "company" });
     return {
       status: 200,
       message: "Post added to featured posts",
@@ -774,14 +783,14 @@ export const getFeaturedPostsByUser = async (userId) => {
   }
 };
 
-export const removeCompanyUpdatePost = async (postId, userId)=>{
-  try{
+export const removeCompanyUpdatePost = async (postId, userId) => {
+  try {
     const user = await UserModel.findByIdAndUpdate(
       userId,
       { $pull: { companyUpdate: postId } },
       { new: true }
     );
-    await PostModel.findOneAndUpdate({_id:postId},{postType:"public"});
+    await PostModel.findOneAndUpdate({ _id: postId }, { postType: "public" });
     if (!user) {
       return {
         status: 404,
@@ -792,15 +801,15 @@ export const removeCompanyUpdatePost = async (postId, userId)=>{
     return {
       status: 200,
       message: "Post removed from featured posts.",
-    }; 
-  }catch(error){
+    };
+  } catch (error) {
     console.error(error);
     return {
       status: 500,
       message: "An error occurred while removing the post from featured posts.",
     };
   }
-}
+};
 export const removeFromFeaturedPost = async (postId, userId) => {
   try {
     const user = await UserModel.findByIdAndUpdate(
