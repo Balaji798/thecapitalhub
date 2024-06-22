@@ -6,6 +6,10 @@ const scheduleSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Users",
     },
+    requesterId: {
+      type: Schema.Types.ObjectId,
+      ref: "Users",
+    },
     start: {
       type: Date,
     },
@@ -15,60 +19,10 @@ const scheduleSchema = new Schema(
     title: {
       type: String,
     },
-    bookedBy: {
-      name: {
-        type: String,
-      },
-      companyName: {
-        type: String,
-      },
-      email: {
-        type: String,
-      },
-      phone: {
-        type: String,
-      },
-      description: {
-        type: String,
-      },
-      oneLink: {
-        type: String,
-      },
-      start: {
-        type: Date,
-      },
-      end: {
-        type: Date,
-      },
+    doc: { type: String },
+    agenda: {
+      type: String,
     },
-    requestedBy: [
-      {
-        name: {
-          type: String,
-        },
-        companyName: {
-          type: String,
-        },
-        email: {
-          type: String,
-        },
-        phone: {
-          type: String,
-        },
-        description: {
-          type: String,
-        },
-        oneLink: {
-          type: String,
-        },
-        start: {
-          type: Date,
-        },
-        end: {
-          type: Date,
-        },
-      },
-    ],
   },
   {
     timestamps: true,

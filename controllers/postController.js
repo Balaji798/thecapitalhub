@@ -23,6 +23,7 @@ import {
   getCompanyUpdateByUser,
   removeCompanyUpdatePost,
   userPost,
+  getPostById,
 } from "../services/postService.js";
 import { UserModel } from "../models/User.js";
 
@@ -417,3 +418,15 @@ export const toggleCommentLikeController = async (req, res) => {
     });
   }
 };
+
+export const getPost = async (req,res) =>{
+  try{
+    const response = await getPostById(req.body.postId)
+    return res.status(response.status).json(response.data)
+  } catch (error){
+    return res.status(500).json({
+      status:500,
+     message: "An error occurred while liking the comment.",
+    })
+  }
+}

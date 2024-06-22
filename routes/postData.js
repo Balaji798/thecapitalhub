@@ -21,7 +21,8 @@ import {
   unsavePostController,
   toggleCommentLikeController,
   removeCompanyUpdatePostController,
-  getUserPost
+  getUserPost,
+  getPost
 } from "../controllers/postController.js";
 import { authenticateToken } from "../middlewares/authenticateToken.js";
 const router = express.Router();
@@ -29,6 +30,7 @@ const router = express.Router();
 router.use(authenticateToken);
 
 router.get("/getposts", getAllPosts);
+router.get("/get_post_by_id",getPost);
 router.get("/getSinglePost/:id", getSinglePost);
 router.get("/user_post",getUserPost)
 // Single user routes
@@ -55,4 +57,4 @@ router.get("/getCompanyUpdatePosts/:userId",getCompanyUpdateByUserController)
 router.delete("/removeFromFeaturedPost/:postId", removeFromFeaturedPostController);
 router.delete("/removeCompanyUpdatePost/:postId",removeCompanyUpdatePostController)
 
-export default router; 
+export default router;

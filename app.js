@@ -5,7 +5,7 @@ import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
 import multer from "multer";
 import connectDB from "./constants/db.js";
-
+import xlsx from "xlsx";
 //routes
 import usersData from "./routes/usersData.js";
 import postData from "./routes/postData.js";
@@ -22,7 +22,7 @@ import notificationData from "./routes/notificationRoutes.js";
 import scheduleRoutes from "./routes/scheduleRoutes.js";
 import questionsRoutes from "./routes/questionsRoute.js";
 import achievementRoutes from "./routes/achievementRoutes.js";
-import liveDealRoutes from "./routes/liveDealRoutes.js" 
+import liveDealRoutes from "./routes/liveDealRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -37,7 +37,7 @@ app.use("/api/posts", postData);
 app.use("/documentation", documentData);
 app.use("/startup", startUpData);
 app.use("/contactUs", contactUsData);
-app.use("/connections", connectionData); 
+app.use("/connections", connectionData);
 app.use("/investor", investorData);
 app.use("/chat", chatData);
 app.use("/message", messageData);
@@ -46,7 +46,7 @@ app.use("/notificaton", notificationData);
 app.use("/schedule", scheduleRoutes);
 app.use("/question", questionsRoutes);
 app.use("/achievement", achievementRoutes);
-app.use("/live_deals",liveDealRoutes);
+app.use("/live_deals", liveDealRoutes);
 // documentation upload
 
 const storage = multer.diskStorage({
@@ -60,7 +60,7 @@ const upload = multer({ storage });
 
 app.post("/upload", upload.single("file"), (req, res) => {
   const file = req.file;
-
+  console.log(file);
   console.log(`File uploaded: ${file.originalname}`);
 
   // Return JSON response with the thumbnail URL or other relevant data
@@ -69,7 +69,6 @@ app.post("/upload", upload.single("file"), (req, res) => {
     thumbnailUrl: `/uploads/${file.originalname}`,
   });
 });
-
 app.use(globalErrorHandler);
 
 connectDB();
@@ -88,7 +87,9 @@ let activeUsers = [];
 io.on("connection", (socket) => {
   socket.on("new-user-add", (newUserId) => {
     if (newUserId !== null) {
-      const existingUserIndex = activeUsers.findIndex((user) => user.userId === newUserId);
+      const existingUserIndex = activeUsers.findIndex(
+        (user) => user.userId === newUserId
+      );
       if (existingUserIndex !== -1) {
         activeUsers[existingUserIndex].socketId = socket.id;
       } else {
@@ -115,7 +116,9 @@ io.on("connection", (socket) => {
       // console.log("Sending from socket to: ", recieverId);
       // console.log("Data: ", data);
       // if (user) io.to(user.socketId).emit("recieve-message", data);
-      const matchedUsers = activeUsers.filter((user) => recieverId.includes(user.userId));
+      const matchedUsers = activeUsers.filter((user) =>
+        recieverId.includes(user.userId)
+      );
       matchedUsers.forEach((user) => {
         io.to(user.socketId).emit("recieve-message", data);
       });

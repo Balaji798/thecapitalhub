@@ -919,3 +919,27 @@ export const toggleCommentLike = async (postId, commentId, userId) => {
     };
   }
 };
+
+
+export const getPostById = async (postId) => {
+  try{
+   const post = await PostModel.findById(postId)
+   if (!post) {
+    return {
+      status: 404,
+      message: "Post not found.",
+    };
+  }
+
+  return {
+    status: 200,
+    message: "Post removed from featured posts.",
+    data:post
+  };
+  }catch(error){
+    return {
+      status: 500,
+      message:"An error occurred while toggling the comment like status.",
+    }
+  }
+}

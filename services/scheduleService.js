@@ -1,13 +1,16 @@
 import { ScheduleModel } from "../models/Schedule.js";
 import { UserModel } from "../models/User.js";
+import { cloudinary } from "../utils/uploadImage.js";
 import { addNotification, deleteNotification } from "./notificationService.js";
 
 export const createMeeting = async (userId, meetingData) => {
   try {
     const startDate = new Date(meetingData.start);
     const endDate = new Date(meetingData.end);
+    const user = await UserModel.findOne({oneLinkId:meetingData.oneLinkId})
+    console.log(user._id)
     const existingMeeting = await ScheduleModel.findOne({
-      userId: userId,
+      requesterId: userId,
       $or: [
         {
           $and: [
@@ -37,9 +40,20 @@ export const createMeeting = async (userId, meetingData) => {
         data: existingMeeting,
       };
     }
+    let doc =''
+    if (meetingData?.doc) {
+      const { secure_url } = await cloudinary.uploader.upload(meetingData?.doc, {
+        folder: `${process.env.CLOUDIANRY_FOLDER}/schedule/doc`,
+        format: "pdf",
+        unique_filename: true,
+      });
+      doc= secure_url;
+    }
     const meeting = new ScheduleModel({
       ...meetingData,
-      userId: userId,
+      userId:user._id,
+      requesterId: userId,
+      doc
     });
     await meeting.save();
 
@@ -48,7 +62,7 @@ export const createMeeting = async (userId, meetingData) => {
       message: "Meeting Created",
       data: meeting,
     };
-  } catch (error) {
+  } catch (error) { 
     console.error(error);
     return {
       status: 500,

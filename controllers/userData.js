@@ -28,8 +28,128 @@ import { sendMail } from "../utils/mailHelper.js";
 import { secretKey } from "../constants/config.js";
 import { UserModel } from "../models/User.js";
 import { StartUpModel } from "../models/startUp.js";
+import xlsx from "xlsx";
 import axios from "axios";
 import { InvestorModel } from "../models/Investor.js";
+
+export const createUser = async (req, res) => {
+  try {
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).send("No file uploaded.");
+    }
+    const generateUniqueOneLink = async (baseLink, model) => {
+      let uniqueLink = baseLink;
+      let count = 1;
+      while (await model.countDocuments({ oneLink: uniqueLink })) {
+        uniqueLink = baseLink + count++;
+      }
+      return uniqueLink;
+    };
+    // Read the file from disk using xlsx.readFile
+    const workbook = xlsx.readFile(file.path);
+
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const jsonData = xlsx.utils.sheet_to_json(sheet);
+    const addUser = async (user) => {
+      const userData = await UserModel.create({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phoneNumber: user.mobileNumber,
+        bio: user.bio,
+        gender: user.gender,
+        isInvestor: user.userType === "Investor" ? true : false,
+        linkedin:user.linkedin,
+        location:user.location,
+      });
+      if (userData._id) {
+        if (isInvestor) {
+          let existingCompany = await InvestorModel.findOne({
+            founderId: userData._id,
+          });
+          let baseOneLink = user.company.split(" ").join("").toLowerCase();
+          const uniqueOneLink = await generateUniqueOneLink(
+            baseOneLink,
+            InvestorModel
+          );
+
+          if (existingCompany) {
+            existingCompany.set({
+              companyName: user.company,
+              industry:user.industry,
+              description: user.portfolio,
+              oneLink: uniqueOneLink,
+            });
+            await existingCompany.save();
+          } else {
+            const newInvestor = await InvestorModel.create({
+              companyName: user.company,
+              industry:user.industry,
+              description: user.portfolio,
+              oneLink: uniqueOneLink,
+              founderId: userData._id,
+            });
+            const { founderId } = newInvestor;
+             await UserModel.findOneAndUpdate(
+              { _id: founderId },
+              {
+                investor: newInvestor._id,
+                location:user.location,
+              }
+            );
+          }
+        } else {
+          let existingCompany = await StartUpModel.findOne({
+            founderId: newUser._id,
+          });
+          let baseOneLink = company.split(" ").join("").toLowerCase();
+          const uniqueOneLink = await generateUniqueOneLink(
+            baseOneLink,
+            StartUpModel
+          );
+
+          if (existingCompany) {
+            existingCompany.set({
+              location:user.location,
+              company:user.company,
+              industry:user.industry,
+              designation:user.designation,
+              oneLink: uniqueOneLink,
+            });
+            await existingCompany.save();
+          } else {
+            const newStartUp = new StartUpModel({
+              companyName: user.company,
+              industry:user.industry,
+              description: user.portfolio,
+              founderId: userData._id,
+              oneLink: uniqueOneLink,
+            });
+
+            await newStartUp.save();
+            const { founderId } = newStartUp;
+            await UserModel.findOneAndUpdate(
+              { _id: founderId },
+              {
+                startUp: newStartUp._id,
+              }
+            );
+          }
+        }
+      }
+    };
+    jsonData.forEach((item) => {
+      addUser(item);
+    });
+
+    return res.status(200).send(jsonData);
+  } catch (err) {
+    return res.status(200).send(err.message);
+  }
+};
 
 export const getUsersController = async (req, res, next) => {
   try {
@@ -116,7 +236,7 @@ export const registerUserController = async (req, res, next) => {
       fundedTillDate,
       portfolio,
       chequeSize,
-      linkedin
+      linkedin,
     } = req.body;
 
     const newUser = await registerUserService({
@@ -127,7 +247,7 @@ export const registerUserController = async (req, res, next) => {
       phoneNumber,
       isInvestor,
       gender,
-      linkedin
+      linkedin,
     });
 
     const generateUniqueOneLink = async (baseLink, model) => {
@@ -140,9 +260,14 @@ export const registerUserController = async (req, res, next) => {
     };
 
     if (isInvestor) {
-      let existingCompany = await InvestorModel.findOne({ founderId: newUser._id });
+      let existingCompany = await InvestorModel.findOne({
+        founderId: newUser._id,
+      });
       let baseOneLink = company.split(" ").join("").toLowerCase();
-      const uniqueOneLink = await generateUniqueOneLink(baseOneLink, InvestorModel);
+      const uniqueOneLink = await generateUniqueOneLink(
+        baseOneLink,
+        InvestorModel
+      );
 
       if (existingCompany) {
         existingCompany.set({
@@ -152,23 +277,28 @@ export const registerUserController = async (req, res, next) => {
           oneLink: uniqueOneLink,
         });
         await existingCompany.save();
-        return res.status(200).json({ message: "Investor Updated", data: existingCompany });
+        return res
+          .status(200)
+          .json({ message: "Investor Updated", data: existingCompany });
       }
       const newInvestor = await InvestorModel.create({
         companyName: company,
         industry,
         description: portfolio,
         oneLink: uniqueOneLink,
-        founderId:newUser._id,
-        linkedin
+        founderId: newUser._id,
+        linkedin,
       });
       //await newInvestor.save();
       const { founderId } = newInvestor;
-      const user = await UserModel.findOneAndUpdate({_id:founderId}, {
-        investor: newInvestor._id,
-        location,
-      });
-    //  console.log("update")
+      const user = await UserModel.findOneAndUpdate(
+        { _id: founderId },
+        {
+          investor: newInvestor._id,
+          location,
+        }
+      );
+      //  console.log("update")
       const emailMessage = `
         A new user has requested for an account:
         
@@ -182,19 +312,32 @@ export const registerUserController = async (req, res, next) => {
         Portfolio: ${newInvestor.portfolio}
       `;
       const subject = "New Account Request";
-      const adminMail = "investments.capitalhub@gmail.com" 
+      const adminMail = "investments.capitalhub@gmail.com";
       //"learn.capitalhub@gmail.com";
-      const response = await sendMail(newUser.firstName, adminMail, newUser.email, subject, emailMessage);
+      const response = await sendMail(
+        newUser.firstName,
+        adminMail,
+        newUser.email,
+        subject,
+        emailMessage
+      );
       if (response.status === 200) {
-        return res.status(200).json({ message: "Investor Added", data: newUser });
+        return res
+          .status(200)
+          .json({ message: "Investor Added", data: newUser });
       } else {
         return res.status(500).json({ message: "Error while sending mail" });
       }
       //return res.status(201).json({ message: "User added successfully" });
     } else {
-      let existingCompany = await StartUpModel.findOne({ founderId: newUser._id });
+      let existingCompany = await StartUpModel.findOne({
+        founderId: newUser._id,
+      });
       let baseOneLink = company.split(" ").join("").toLowerCase();
-      const uniqueOneLink = await generateUniqueOneLink(baseOneLink, StartUpModel);
+      const uniqueOneLink = await generateUniqueOneLink(
+        baseOneLink,
+        StartUpModel
+      );
 
       if (existingCompany) {
         existingCompany.set({
@@ -206,7 +349,9 @@ export const registerUserController = async (req, res, next) => {
           oneLink: uniqueOneLink,
         });
         await existingCompany.save();
-        return res.status(200).json({ message: "Startup Updated", data: existingCompany });
+        return res
+          .status(200)
+          .json({ message: "Startup Updated", data: existingCompany });
       }
 
       const newStartUp = new StartUpModel({
@@ -216,14 +361,19 @@ export const registerUserController = async (req, res, next) => {
 
       await newStartUp.save();
       const { founderId } = newStartUp;
-     await UserModel.findOneAndUpdate({_id:founderId}, {
-        startUp: newStartUp._id,
-      });
+      await UserModel.findOneAndUpdate(
+        { _id: founderId },
+        {
+          startUp: newStartUp._id,
+        }
+      );
       const token = jwt.sign(
         { userId: newUser._id, phoneNumber: newUser.phoneNumber },
         secretKey
       );
-      return res.status(201).json({ message: "User added successfully",data:newUser, token});
+      return res
+        .status(201)
+        .json({ message: "User added successfully", data: newUser, token });
     }
   } catch ({ message }) {
     res.status(409).json({
@@ -233,7 +383,6 @@ export const registerUserController = async (req, res, next) => {
     });
   }
 };
-
 
 export const loginUserController = async (req, res, next) => {
   try {

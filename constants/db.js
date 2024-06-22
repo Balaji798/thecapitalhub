@@ -9,7 +9,7 @@ const connectDB = async () => {
     });
     console.log("Database is connected");
   } catch (error) {
-    console.log("error-->",error)
+    console.log("error-->",error) 
     throw new Error("Internal Server Error");
   }
 };
