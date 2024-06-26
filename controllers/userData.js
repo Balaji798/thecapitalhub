@@ -347,6 +347,7 @@ export const registerUserController = async (req, res, next) => {
           industry,
           designation,
           oneLink: uniqueOneLink,
+          founderId: newUser._id,
         });
         await existingCompany.save();
         return res

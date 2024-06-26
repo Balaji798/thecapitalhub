@@ -23,6 +23,9 @@ const scheduleSchema = new Schema(
     agenda: {
       type: String,
     },
+    meetingLink:{
+      type:String
+    }
   },
   {
     timestamps: true,

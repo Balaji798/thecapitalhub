@@ -40,12 +40,20 @@ export const get_live_deal = async (req, res) => {
 
 export const add_to_live_deals = async (req, res) => {
   try {
-    console.log(req.body.liveDealId)
     const data = await LiveDealsModel.findById(req.body.liveDealId);
-    if (!data.intrustedInvestor.includes(req.userId)) {
-      data.intrustedInvestor.push(req.userId);
-      data.save();
+    const userId = req.userId;
+    const userIndex = data.intrustedInvestor.indexOf(userId);
+
+    if (userIndex === -1) {
+      // Add user if not already interested
+      data.intrustedInvestor.push(userId);
+    } else {
+      // Remove user if already interested
+      data.intrustedInvestor.splice(userIndex, 1);
     }
+
+    // Save the updated live deal
+    await data.save();
     const liveDealData = await LiveDealsModel.find().populate({
       path: "startupId",
       model: "StartUps",

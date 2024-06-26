@@ -159,7 +159,7 @@ const userSchema = new Schema(
     },],
     userStatus: {
       type: String,
-      default: "inactive"
+      default: "active"
     },
     oneLinkId: {
       type: String,
