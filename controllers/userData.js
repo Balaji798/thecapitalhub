@@ -28,6 +28,7 @@ import { sendMail } from "../utils/mailHelper.js";
 import { secretKey } from "../constants/config.js";
 import { UserModel } from "../models/User.js";
 import { StartUpModel } from "../models/startUp.js";
+import bcrypt from "bcrypt";
 import xlsx from "xlsx";
 import axios from "axios";
 import { InvestorModel } from "../models/Investor.js";
@@ -55,22 +56,27 @@ export const createUser = async (req, res) => {
     const jsonData = xlsx.utils.sheet_to_json(sheet);
     const addUser = async (user) => {
       const userData = await UserModel.create({
-        firstName: user.firstName,
+        firstName: user.firstname,
         lastName: user.lastName,
         email: user.email,
         phoneNumber: user.mobileNumber,
         bio: user.bio,
-        gender: user.gender,
+        gender: user.gender === "M" ? "Male" : "Female",
         isInvestor: user.userType === "Investor" ? true : false,
-        linkedin:user.linkedin,
-        location:user.location,
+        linkedin: user.user_inkedin,
+        location: user.location,
+        userName:
+          user.firstname +
+          "_" +
+          Math.floor(Math.random() * Math.pow(10, 4)).toString(),
+        userStatus: "active",
       });
       if (userData._id) {
-        if (isInvestor) {
+        if (user.userType === "Investor") {
           let existingCompany = await InvestorModel.findOne({
             founderId: userData._id,
           });
-          let baseOneLink = user.company.split(" ").join("").toLowerCase();
+          let baseOneLink = user.companyName.split(" ").join("").toLowerCase();
           const uniqueOneLink = await generateUniqueOneLink(
             baseOneLink,
             InvestorModel
@@ -78,34 +84,36 @@ export const createUser = async (req, res) => {
 
           if (existingCompany) {
             existingCompany.set({
-              companyName: user.company,
-              industry:user.industry,
-              description: user.portfolio,
+              companyName: user.companyName,
+              industry: user.industry,
+              description: user.pcomany_bio,
               oneLink: uniqueOneLink,
             });
             await existingCompany.save();
           } else {
             const newInvestor = await InvestorModel.create({
-              companyName: user.company,
-              industry:user.industry,
-              description: user.portfolio,
+              companyName: user.companyName,
+              industry: user.industry,
+              description: user.pcomany_bio,
               oneLink: uniqueOneLink,
               founderId: userData._id,
+              linkedin: user.company_inkedin,
+              logo: user.logo,
             });
             const { founderId } = newInvestor;
-             await UserModel.findOneAndUpdate(
+            await UserModel.findOneAndUpdate(
               { _id: founderId },
               {
                 investor: newInvestor._id,
-                location:user.location,
+                location: user.location,
               }
             );
           }
         } else {
           let existingCompany = await StartUpModel.findOne({
-            founderId: newUser._id,
+            founderId: userData._id,
           });
-          let baseOneLink = company.split(" ").join("").toLowerCase();
+          let baseOneLink = user.companyName.split(" ").join("").toLowerCase();
           const uniqueOneLink = await generateUniqueOneLink(
             baseOneLink,
             StartUpModel
@@ -113,20 +121,23 @@ export const createUser = async (req, res) => {
 
           if (existingCompany) {
             existingCompany.set({
-              location:user.location,
-              company:user.company,
-              industry:user.industry,
-              designation:user.designation,
+              location: user.location,
+              company: user.companyName,
+              industry: user.industry,
+              designation: user.designation,
               oneLink: uniqueOneLink,
+              description: user.pcomany_bio,
             });
             await existingCompany.save();
           } else {
             const newStartUp = new StartUpModel({
-              companyName: user.company,
-              industry:user.industry,
-              description: user.portfolio,
+              companyName: user.companyName,
+              industry: user.industry,
+              description: user.pcomany_bio,
               founderId: userData._id,
               oneLink: uniqueOneLink,
+              linkedin: user.company_inkedin,
+              logo: user.logo,
             });
 
             await newStartUp.save();
@@ -151,6 +162,178 @@ export const createUser = async (req, res) => {
   }
 };
 
+export const addInvestor = async (req, res) => {
+  try {
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).send("No file uploaded.");
+    }
+    const generateUniqueOneLink = async (baseLink, model) => {
+      let uniqueLink = baseLink;
+      let count = 1;
+      while (await model.countDocuments({ oneLink: uniqueLink })) {
+        uniqueLink = baseLink + count++;
+      }
+      return uniqueLink;
+    };
+    // Read the file from disk using xlsx.readFile
+    const workbook = xlsx.readFile(file.path);
+
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const jsonData = xlsx.utils.sheet_to_json(sheet);
+    const addUser = async (user) => {
+      const userData = await UserModel.create({
+        firstName: user.firstname,
+        lastName: user.lastname,
+        email: user.email,
+        //phoneNumber: user.mobileNumber,
+        bio: user.notes,
+        //gender: user.gender === "M"? "Male":"Female",
+        isInvestor: true,
+        linkedin: user.urls,
+        //location:user.location,
+        userName:
+          user.firstname +
+          "_" +
+          Math.floor(Math.random() * Math.pow(10, 4)).toString(),
+        userStatus: "active",
+        designation: user.jobTitle,
+      });
+      if (userData._id && user.companies) {
+        let existingCompany = await InvestorModel.findOne({
+          founderId: userData._id,
+        });
+        let baseOneLink = user.companies.split(" ").join("").toLowerCase();
+        const uniqueOneLink = await generateUniqueOneLink(
+          baseOneLink,
+          InvestorModel
+        );
+
+        if (existingCompany) {
+          existingCompany.set({
+            companyName: user.companies,
+            // industry:user.industry,
+            // description: user.pcomany_bio,
+            oneLink: uniqueOneLink,
+          });
+          await existingCompany.save();
+        } else {
+          const newInvestor = await InvestorModel.create({
+            companyName: user.companies,
+            //industry:user.industry,
+            //description: user.pcomany_bio,
+            oneLink: uniqueOneLink,
+            founderId: userData._id,
+            //linkedin:user.company_inkedin,
+            //logo:user.logo,
+          });
+          const { founderId } = newInvestor;
+          await UserModel.findOneAndUpdate(
+            { _id: founderId },
+            {
+              investor: newInvestor._id,
+              //location:user.location,
+            }
+          );
+        }
+      }
+    };
+    jsonData.forEach((item) => {
+      addUser(item);
+    });
+
+    return res.status(200).send(jsonData);
+  } catch (err) {
+    return res.status(200).send(err.message);
+  }
+};
+
+export const addStartUp_data = async (req, res) => {
+  try {
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).send("No file uploaded.");
+    }
+    const generateUniqueOneLink = async (baseLink, model) => {
+      let uniqueLink = baseLink;
+      let count = 1;
+      while (await model.countDocuments({ oneLink: uniqueLink })) {
+        uniqueLink = baseLink + count++;
+      }
+      return uniqueLink;
+    };
+    // Read the file from disk using xlsx.readFile
+    const workbook = xlsx.readFile(file.path);
+
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const jsonData = xlsx.utils.sheet_to_json(sheet);
+    const addUser = async (user) => {
+      const userData = await UserModel.create({
+        firstName: user.firstname,
+        lastName: user.lastName,
+        email: user.email,
+        //phoneNumber: user.mobileNumber,
+        //bio: user.notes,
+        //gender: user.gender === "M"? "Male":"Female",
+        isInvestor: true,
+        linkedin: user.luser_inkedin,
+        //location:user.location,
+        userName:
+          user.firstname +
+          "_" +
+          Math.floor(Math.random() * Math.pow(10, 4)).toString(),
+        userStatus: "active",
+        designation: user.bio,
+      });
+      if (userData._id && user.pcompany_bio) {
+        let baseOneLink = user.pcompany_bio.split(" ").join("").toLowerCase();
+        const uniqueOneLink = await generateUniqueOneLink(
+          baseOneLink,
+          StartUpModel
+        );
+        const isExist = await StartUpModel.findOne({ oneLink: uniqueOneLink });
+        console.log(isExist?._id);
+        if (isExist) {
+          await UserModel.findOneAndUpdate(
+            { _id: userData._id },
+            {
+              startUp: isExist._id,
+            }
+          );
+        } else {
+          const newStartUp = new StartUpModel({
+            company: user.pcompany_bio,
+            //industry: user.industry,
+            //description: user.pcomany_bio,
+            founderId: userData._id,
+            oneLink: uniqueOneLink,
+            //linkedin: user.company_inkedin,
+            //logo: user.logo,
+          });
+
+          await newStartUp.save();
+          const { founderId } = newStartUp;
+          await UserModel.findOneAndUpdate(
+            { _id: founderId },
+            {
+              startUp: newStartUp._id,
+            }
+          );
+        }
+      }
+    };
+    jsonData.forEach((item) => {
+      addUser(item);
+    });
+    return res.status(200).send(jsonData);
+  } catch (err) {
+    return res.status(200).send(err.message);
+  }
+};
 export const getUsersController = async (req, res, next) => {
   try {
     const getUser = await getUsersService();
@@ -385,6 +568,60 @@ export const registerUserController = async (req, res, next) => {
   }
 };
 
+export const handelLinkedin = async (req, res) => {
+  try {
+    const response = await axios.post(
+      "https://www.linkedin.com/oauth/v2/accessToken",
+      null,
+      {
+        params: {
+          grant_type: "authorization_code",
+          code: req.body.code,
+          redirect_uri: "http://localhost:3000/linkedin",
+          client_id: process.env.LINKEDIN_CLIENT_ID, // Set these in your environment
+          client_secret: process.env.LINKEDIN_CLIENT_SECRET,
+        },
+      }
+    );
+    return res.status(200).json({ access_token: response.data.access_token });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: error.response ? error.response.data : "Server error" });
+  }
+};
+
+export const getLinkedInProfile = async (req, res) => {
+  try {
+    const { accessToken } = req.body;
+    console.log(accessToken);
+    const response = await axios.get("https://api.linkedin.com/v2/userinfo", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    const api_url = "https://api.linkedin.com/v2/";
+
+    const data = axios.get(
+      api_url +
+        "me?projection=(id,firstName,lastName,profilePicture(displayImage~:playableStreams))",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    const ress = json.loads(data.text);
+    console.log(ress);
+    return res.status(200).json(response.data);
+  } catch (error) {
+    console.log(error.message);
+    res
+      .status(500)
+      .json({ error: error.response ? error.response.data : "Server error" });
+  }
+};
 export const loginUserController = async (req, res, next) => {
   try {
     const { phoneNumber, password } = req.body;
@@ -462,9 +699,24 @@ export const changePasswordController = async (req, res) => {
 
 export const requestPasswordResetController = async (req, res) => {
   try {
-    const { email } = req.body;
-    const response = await requestPasswordReset(email);
-    res.status(response.status).send(response);
+    console.log(req.body)
+    const existingUser = await UserModel.findOne({
+      $or: [{ email: req.body.usernameOrEmail }, { userName: req.body.usernameOrEmail }],
+    });
+    if(!existingUser){
+      return res.status(400).send({message:"User dose not exist"})
+    }
+    //const response = await requestPasswordReset(email);
+    const salt = await bcrypt.genSalt(10);
+    const password = await bcrypt.hash(req.body.password.toString(), salt);
+
+    await UserModel.findOneAndUpdate(
+      {
+        $or: [{ email: req.body.usernameOrEmail }, { userName: req.body.usernameOrEmail }],
+      },
+      { password: password }
+    );
+    return res.status(200).send({user:existingUser,status:"200"});
   } catch (error) {
     console.error(error);
     return res

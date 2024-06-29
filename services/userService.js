@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import { secretKey } from "../constants/config.js";
 import { sendMail } from "../utils/mailHelper.js";
 import bcrypt from "bcrypt";
+import { comparePassword } from "../utils/passwordManager.js";
 
 const adminMail = "learn.capitalhub@gmail.com";
 
@@ -45,9 +46,20 @@ export const loginUserService = async ({ phoneNumber, password }) => {
     path: "startUp",
     select: "company logo",
   });
-  if (!user) throw new Error("Invalid credentials");
+
+  if (!user) {
+    const existingUser = await UserModel.findOne({
+      $or: [{ email: phoneNumber }, { userName: phoneNumber }],
+    });
+    console.log(existingUser)
+    if(!existingUser) throw new Error("Invalid credentials");
+    await comparePassword(password, existingUser.password);
+    return existingUser
+  } else{
+    return user;
+  }
   //await comparePassword(password, user.password);
-  return user;
+  
 };
 
 //get User by id

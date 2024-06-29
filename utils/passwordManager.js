@@ -17,6 +17,7 @@ export const comparePassword = async (inputPassword, hashedPassword) => {
       inputPassword.toString(),
       hashedPassword
     );
+    console.log(checkPassword)
     if (!checkPassword) throw new Error();
     return true;
   } catch (error) {

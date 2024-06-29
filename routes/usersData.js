@@ -25,7 +25,11 @@ import {
   deleteExperienceController,
   sendOTP,
   verifyOtp,
-  createUser
+  createUser,
+  addInvestor,
+  addStartUp_data,
+  handelLinkedin,
+  getLinkedInProfile
 } from "../controllers/userData.js";
 import { authenticateToken } from "../middlewares/authenticateToken.js";
 import { update_all } from "../controllers/postController.js";
@@ -41,9 +45,13 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-router.post("/add_user",upload.single("file"),createUser)
+router.post("/add_user",upload.single("file"),createUser);
+router.post("/add_investor",upload.single("file"),addInvestor);
+router.post("/add_startup_data",upload.single("file"),addStartUp_data)
 router.post("/update_all", update_all)
 router.post("/login", loginUserController);
+router.post("/linkdin_login",handelLinkedin);
+router.post("/getLinkedInProfile",getLinkedInProfile)
 router.post("/createUser", registerUserController);
 router.post("/send_otp",sendOTP);
 router.post("/verify_otp", verifyOtp)
